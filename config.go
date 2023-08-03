@@ -23,6 +23,7 @@ type NginxConfig struct {
 	UserHttpConf         string
 	EnableHTTPS          bool
 	DisableHTTPSRedirect bool
+	DisableCacheControl  bool
 	AppRoot              string
 	WebDirectory         string
 	FpmSocket            string
@@ -117,6 +118,17 @@ func (c NginxConfigWriter) Write(workingDir string) (string, error) {
 	}
 	data.DisableHTTPSRedirect = !enableHTTPSRedirect
 	c.logger.Debug.Subprocess(fmt.Sprintf("Enable HTTPS redirect: %t", enableHTTPSRedirect))
+
+	enableCacheControl := true
+	enableCacheControlStr, ok := os.LookupEnv("BP_PHP_ENABLE_CACHE_CONTROL")
+	if ok {
+		enableCacheControl, err = strconv.ParseBool(enableCacheControlStr)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse $BP_PHP_ENABLE_CACHE_CONTROL into boolean: %w", err)
+		}
+	}
+	data.DisableCacheControl = !enableCacheControl
+	c.logger.Debug.Subprocess(fmt.Sprintf("Enable Cache control: %t", enableCacheControl))
 
 	fpmSocket := "/tmp/php-fpm.socket"
 	data.FpmSocket = fpmSocket
